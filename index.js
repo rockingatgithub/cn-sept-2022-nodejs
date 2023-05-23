@@ -2,6 +2,8 @@ const express = require('express')
 const path = require('path')
 const PORT = 8000
 const app = express()
+const db = require('./config/mongoose')
+const Candidate = require('./model/candidate')
 // let counter = 0
 
 app.use(express.urlencoded())
@@ -42,17 +44,18 @@ const students = [
 ]
 
 // difference between res.send and res.end
-app.get('/student', (req, res) => {
+app.get('/student', async (req, res) => {
 
+    const students = await Candidate.find({})
     return res.status(200).json({ data: students })
 
 })
 
-app.post('/student', (req, res) => {
+app.post('/student', async (req, res) => {
 
     console.log("the body", req.body)
-    const updatedStudent = [ ...students, req.body  ]
-    return res.status(200).json({ data: updatedStudent })
+    const student = await Candidate.create(req.body)
+    return res.status(200).json({ data: student })
 
 })
 
