@@ -10,13 +10,24 @@
     
     This is served by Express!
 
-    <form method="post" action=""  >
+    <form onsubmit="submitHandler(event)" method="post"  >
 
         <input name="email" />
         <input name="password" />
         <button>Submit</button>
 
     </form>
+
+    <script>
+
+        function submitHandler (event) {
+
+            event.preventDefault()
+
+
+        }
+
+    </script>
 
 </body>
 </html>

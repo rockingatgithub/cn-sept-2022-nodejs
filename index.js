@@ -1,12 +1,42 @@
 const express = require('express')
 const path = require('path')
+const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken')
 const PORT = 8000
 const app = express()
 const db = require('./config/mongoose')
 const Candidate = require('./model/candidate')
 // let counter = 0
 
+// middlewares
 app.use(express.urlencoded())
+app.use(express.json())
+app.use(cookieParser())
+
+const authMiddleware = async (req, res, next) => {
+
+    console.log(req.cookies.user)
+
+    if(req.cookies.user) {
+
+        const studentId = jwt.verify(req.cookies.user, 'mykey')
+        const student = await Candidate.findById(studentId)
+
+        if(student) {
+            next()
+        } else {
+            return res.status(401).json({message: "Unauthorized"})
+        }
+
+    } else {
+        return res.status(401).json({message: "Unauthorized"})
+    }
+
+    
+
+
+}
+
 
 // middlewares...
 
@@ -28,23 +58,8 @@ app.use(express.urlencoded())
 
 // CRUD API with student data
 
-const students = [
-    {
-        name: "abc",
-        roll: 34
-    },
-    {
-        name: "abcd",
-        roll: 35
-    },
-    {
-        name: "abcde",
-        roll: 36
-    }
-]
-
 // difference between res.send and res.end
-app.get('/student', async (req, res) => {
+app.get('/student', authMiddleware, async (req, res) => {
 
     const students = await Candidate.find({})
     return res.status(200).json({ data: students })
@@ -53,24 +68,36 @@ app.get('/student', async (req, res) => {
 
 app.post('/student', async (req, res) => {
 
-    console.log("the body", req.body)
+    console.log("the body", req.body )
     const student = await Candidate.create(req.body)
     return res.status(200).json({ data: student })
 
 })
 
-app.put('/student', (req, res) => {
+app.put('/student/:email', authMiddleware, async (req, res) => {
 
     // console.log("the body", req.body, parseInt(req.params.roll))
-    console.log("the body", req.body, parseInt(req.query.roll))
 
-    const roll = parseInt(req.query.roll)
+    const student = await Candidate.findOneAndUpdate({ email: req.params.email },
+        req.body, { new: true }
+        )
 
-    const index = students.findIndex((student) => student.roll === roll)
+    return res.status(200).json({ data: student })
 
-    students.splice(index, 1, req.body)
+})
 
-    return res.status(200).json({ data: students })
+app.post('/auth/local', async (req, res) => {
+
+    console.log(req.body)
+    const student = await Candidate.findOne({email: req.body.email, password: req.body.password})
+
+    if(student) {
+        const token = jwt.sign(student.id, 'mykey', { expiresIn: '24h' })
+        res.cookie('user', token)
+        return res.status(200).json({message: "User authenticated successfully!", user: student })
+    }
+
+    return res.status(401).json({ message: "User not found!"})
 
 })
 
