@@ -14,7 +14,11 @@ const candidateSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-    }
+    },
+    interviews: [{
+        type: mongoose.Types.ObjectId,
+        ref: 'Interview'
+    }]
 })
 
 const Candidate = mongoose.model('Student', candidateSchema)
